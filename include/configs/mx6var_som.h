@@ -192,7 +192,7 @@
 	"splashfile=/boot/splash.bmp\0" \
 	"splashimage=0x18100000\0" \
 	"splashenable=setenv splashfile /boot/splash.bmp; " \
-		"setenv splashimage 0x18100000\0" \
+	"setenv splashimage 0x18100000\0" \
 	"splashdisable=setenv splashfile; setenv splashimage\0" \
 	"console=" CONSOLE_DEV "\0" \
 	"findfdt=setenv fdt_file imx6dl-orotig.dtb; \0" 
