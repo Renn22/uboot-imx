@@ -1,3 +1,5 @@
+
+
 /*
  * Copyright (C) 2012-2015 Freescale Semiconductor, Inc.
  * Copyright (C) 2016-2019 Variscite Ltd.
@@ -37,21 +39,21 @@
 /* Falcon Mode */
 #define CONFIG_CMD_SPL
 #ifdef CONFIG_SPL_OS_BOOT
-#define CONFIG_SPL_FS_LOAD_ARGS_NAME	"args"
-#define CONFIG_SPL_FS_LOAD_KERNEL_NAME	"uImage"
-#define CONFIG_SYS_SPL_ARGS_ADDR	0x18000000
-#define CONFIG_CMD_SPL_WRITE_SIZE	(128 * SZ_1K)
+	#define CONFIG_SPL_FS_LOAD_ARGS_NAME	"args"
+	#define CONFIG_SPL_FS_LOAD_KERNEL_NAME	"uImage"
+	#define CONFIG_SYS_SPL_ARGS_ADDR	0x18000000
+	#define CONFIG_CMD_SPL_WRITE_SIZE	(128 * SZ_1K)
 
-/* Falcon Mode - MMC support: args@11MB kernel@4MB */
-#define CONFIG_SYS_MMCSD_RAW_MODE_ARGS_SECTOR	0x5800	/* 11MB */
-#define CONFIG_SYS_MMCSD_RAW_MODE_ARGS_SECTORS	(CONFIG_CMD_SPL_WRITE_SIZE / 512)
-#define CONFIG_SYS_MMCSD_RAW_MODE_KERNEL_SECTOR	0x2000	/* 4MB */
+	/* Falcon Mode - MMC support: args@11MB kernel@4MB */
+	#define CONFIG_SYS_MMCSD_RAW_MODE_ARGS_SECTOR	0x5800	/* 11MB */
+	#define CONFIG_SYS_MMCSD_RAW_MODE_ARGS_SECTORS	(CONFIG_CMD_SPL_WRITE_SIZE / 512)
+	#define CONFIG_SYS_MMCSD_RAW_MODE_KERNEL_SECTOR	0x2000	/* 4MB */
 
-#ifdef CONFIG_NAND_BOOT
-/* Falcon Mode - NAND support: args@11MB kernel@4MB */
-#define CONFIG_SYS_NAND_SPL_KERNEL_OFFS	(4 * SZ_1M)
-#define CONFIG_CMD_SPL_NAND_OFS		(11 * SZ_1M)
-#endif
+	#ifdef CONFIG_NAND_BOOT
+		/* Falcon Mode - NAND support: args@11MB kernel@4MB */
+		#define CONFIG_SYS_NAND_SPL_KERNEL_OFFS	(4 * SZ_1M)
+		#define CONFIG_CMD_SPL_NAND_OFS		(11 * SZ_1M)
+	#endif
 #endif
 
 /* MMC Configs */
@@ -91,8 +93,6 @@
 	"bootenv=uEnv.txt\0" \
 	"script=boot.scr\0" \
 	"uimage=uImage\0" \
-	"boot_fdt=try\0" \
-	"ip_dyn=yes\0" \
 	"mmcdev=" __stringify(CONFIG_SYS_MMC_ENV_DEV) "\0" \
 	"mmcblk=0\0" \
 	"mmcautodetect=yes\0" \
@@ -116,19 +116,9 @@
 		"run mmcargs; " \
 		"run videoargs; " \
 		"run optargs; " \
-		"if test ${boot_fdt} = yes || test ${boot_fdt} = try; then " \
-			"if run loadfdt; then " \
-				"bootm ${loadaddr} - ${fdt_addr}; " \
-			"else " \
-				"if test ${boot_fdt} = try; then " \
-					"bootm; " \
-				"else " \
-					"echo WARN: Cannot load the DT; " \
-				"fi; " \
-			"fi; " \
-		"else " \
-			"bootm; " \
-		"fi;\0"
+		"run loadfdt; " \
+		"bootm ${loadaddr} - ${fdt_addr}; " \
+		"\0"
 
 
 #define MMC_BOOTCMD \
@@ -142,11 +132,9 @@
 		"else " \
 			"if run loaduimage; then " \
 				"run mmcboot; " \
-			"else " \
-				"run netboot; " \
 			"fi; " \
 		"fi; " \
-	"else run netboot; fi;"
+	"fi;"
 
 #ifdef CONFIG_NAND_BOOT
 #define NAND_BOOT_ENV_SETTINGS \
@@ -188,15 +176,8 @@
 
 #define VIDEO_ENV_SETTINGS \
 	"videoargs=" \
-		"if hdmidet; then " \
-			"setenv bootargs ${bootargs} " \
-				"video=mxcfb0:dev=hdmi,1920x1080M@60,if=RGB24; " \
-		"else " \
-			"setenv bootargs ${bootargs} " \
-				"video=mxcfb0:dev=ldb; " \
-		"fi; " \
 		"setenv bootargs ${bootargs} " \
-			"video=mxcfb1:off video=mxcfb2:off video=mxcfb3:off;\0"
+			"video=mxcfb0:dev=ldb mxcfb1:dev=hdmi quiet loglevel=0 vt.global_cursor_default=0;\0"
 
 
 #define CONFIG_EXTRA_ENV_SETTINGS \
@@ -214,87 +195,7 @@
 		"setenv splashimage 0x18100000\0" \
 	"splashdisable=setenv splashfile; setenv splashimage\0" \
 	"console=" CONSOLE_DEV "\0" \
-	"netargs=setenv bootargs console=${console},${baudrate} " \
-		"root=/dev/nfs rw " \
-		"ip=dhcp nfsroot=${serverip}:${nfsroot},v3,tcp; " \
-		"run videoargs\0" \
-	"netboot=echo Booting from net ...; " \
-		"run netargs; " \
-		"run optargs; " \
-		"if test ${ip_dyn} = yes; then " \
-			"setenv get_cmd dhcp; " \
-		"else " \
-			"setenv get_cmd tftp; " \
-		"fi; " \
-		"${get_cmd} ${uimage}; " \
-		"if test ${boot_fdt} = yes || test ${boot_fdt} = try; then " \
-			"run findfdt; " \
-			"echo fdt_file=${fdt_file}; " \
-			"if ${get_cmd} ${fdt_addr} ${fdt_file}; then " \
-				"bootm ${loadaddr} - ${fdt_addr}; " \
-			"else " \
-				"if test ${boot_fdt} = try; then " \
-					"bootm; " \
-				"else " \
-					"echo WARN: Cannot load the DT; " \
-				"fi; " \
-			"fi; " \
-		"else " \
-			"bootm; " \
-		"fi;\0" \
-	"findfdt="\
-		"if test $fdt_file = undefined; then " \
-			"if test $board_name = DT6CUSTOM && test $board_rev = MX6Q; then " \
-				"setenv fdt_file imx6q-var-dart.dtb; " \
-			"fi; " \
-			"if test $board_name = SOLOCUSTOM && test $board_rev = MX6QP; then " \
-				"setenv fdt_file imx6qp-var-som-vsc.dtb; " \
-			"fi; " \
-			"if test $board_name = SOLOCUSTOM && test $board_rev = MX6Q; then " \
-				"setenv fdt_file imx6q-var-som-vsc.dtb; " \
-			"fi; " \
-			"if test $board_name = SOLOCUSTOM && test $board_rev = MX6DL && test $board_som = SOM-SOLO; then " \
-				"setenv fdt_file imx6dl-var-som-solo-vsc.dtb; " \
-			"fi; " \
-			"if test $board_name = SOLOCUSTOM && test $board_rev = MX6DL && test $board_som = SOM-MX6; then " \
-				"setenv fdt_file imx6dl-var-som-vsc.dtb; " \
-			"fi; " \
-			"if test $board_name = MX6CUSTOM && test $board_rev = MX6QP; then " \
-				"i2c dev 2; " \
-				"if i2c probe 0x38; then " \
-					"setenv fdt_file imx6qp-var-som-cap.dtb; " \
-				"else " \
-					"setenv fdt_file imx6qp-var-som-res.dtb; " \
-				"fi; " \
-			"fi; " \
-			"if test $board_name = MX6CUSTOM && test $board_rev = MX6Q; then " \
-				"i2c dev 2; " \
-				"if i2c probe 0x38; then " \
-					"setenv fdt_file imx6q-var-som-cap.dtb; " \
-				"else " \
-					"setenv fdt_file imx6q-var-som-res.dtb; " \
-				"fi; " \
-			"fi; " \
-			"if test $board_name = MX6CUSTOM && test $board_rev = MX6DL && test $board_som = SOM-SOLO; then " \
-				"i2c dev 2; " \
-				"if i2c probe 0x38; then " \
-					"setenv fdt_file imx6dl-var-som-solo-cap.dtb; " \
-				"else " \
-					"setenv fdt_file imx6dl-var-som-solo-res.dtb; " \
-				"fi; " \
-			"fi; " \
-			"if test $board_name = MX6CUSTOM && test $board_rev = MX6DL && test $board_som = SOM-MX6; then " \
-				"i2c dev 2; " \
-				"if i2c probe 0x38; then " \
-					"setenv fdt_file imx6dl-var-som-cap.dtb; " \
-				"else " \
-					"setenv fdt_file imx6dl-var-som-res.dtb; " \
-				"fi; " \
-			"fi; " \
-			"if test $fdt_file = undefined; then " \
-				"echo WARNING: Could not determine dtb to use; " \
-			"fi; " \
-		"fi;\0"
+	"findfdt=setenv fdt_file imx6dl-orotig.dtb; \0" 
 
 #define CONFIG_ARP_TIMEOUT		200UL
 
@@ -437,3 +338,4 @@
 #endif
 
 #endif	/* __MX6VAR_SOM_CONFIG_H */
+
